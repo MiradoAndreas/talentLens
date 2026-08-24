@@ -9,4 +9,8 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  getHelloProtected(): string {
+    return this.appService.getHelloProtected();
+  }
 }

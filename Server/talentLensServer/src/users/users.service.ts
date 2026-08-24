@@ -1,48 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from '../schemas/user.schema';
+import { User, UserDocument } from './schema/user.schema';
 import { Model } from 'mongoose';
-import { CreateUserDto } from './dto/CreateUser.dto';
-import { UpdateUserDto } from './dto/UpdateUser.dto';
-import { UserSettings } from '../schemas/userSettings.schema';
+
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(UserSettings.name)
-    private userSettingsModel: Model<UserSettings>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
   ) {}
 
-  async createUser({ settings, ...createUserDto }: CreateUserDto) {
-    if (settings) {
-      const newSettings = new this.userSettingsModel(settings);
-      const savenewSettings = await newSettings.save();
-
-      const newUser = new this.userModel({
-        ...createUserDto,
-        settings: savenewSettings._id,
-      });
-
-      return newUser.save();
-    }
-    const newUser = new this.userModel(createUserDto);
-
-    return newUser.save();
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({
+      email: email.toLowerCase(),
+    });
   }
 
-  getUsers() {
-    return this.userModel.find().populate(['settings', 'posts']);
+  async findBydId(id: string): Promise<UserDocument | null> {
+    return this.userModel.findById(id);
   }
 
-  getUserById(id: string) {
-    return this.userModel.findById(id).populate(['settings', 'posts']);
-  }
+  async create(
+    name: string,
+    email: string,
+    hashedPassword: string,
+  ): Promise<UserDocument> {
+    const user = new this.userModel({
+      name,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+    });
 
-  updateUser(id: string, updateUserDto: UpdateUserDto) {
-    return this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true });
-  }
-
-  deleteUser(id: string) {
-    return this.userModel.findByIdAndDelete(id);
+    return user.save();
   }
 }
